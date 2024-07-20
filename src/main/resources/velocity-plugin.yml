@@ -1,0 +1,9 @@
+{
+  "id": "nlkwhitelist",
+  "name": "NLKWhitelist",
+  "version": "1.1-SNAPSHOT",
+  "description": "A whitelist plugin for Velocity",
+  "authors": [
+    "Leitingsd"
+  ]
+}
