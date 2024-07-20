@@ -13,6 +13,13 @@
 * 删除追踪
 * 其它基本元数据
 
+## 变化
+
+* 基于 RIAWhitelist 以Velocity插件格式进行重写;
+* 不再支持BungeeCord;仅支持Velocity;
+* 移除了RIA特色(指令中所有的/ria前缀,如 /riawladd 更变为 /wladd);
+* 整合 RIAWhitelistVelocityReade 的功能(开发进行中);
+
 ## 命令
 
 ### 添加白名单
