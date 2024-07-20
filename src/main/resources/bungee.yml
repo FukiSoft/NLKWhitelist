@@ -1,3 +1,0 @@
-name: RIAWhitelist
-version: '${project.version}'
-main: com.ghostchu.plugins.riawhitelist.RIAWhitelist
