@@ -1,35 +1,38 @@
 package com.leitingsd.plugins.nlkwhitelist.manager;
 
-import java.sql.Timestamp;
+import java.time.Instant;
 
 public class WhitelistRecord {
     private final long id;
+    private final Instant time;
     private final String player;
     private final String operator;
     private final String guarantor;
     private final String train;
     private final String description;
-    private final Timestamp time;
-    private final long deleteAt;
-    private final String deleteOperator;
+    private final String deleteAt;
     private final String deleteReason;
+    private final String deleteOperator;
 
-    public WhitelistRecord(long id, String player, String operator, String guarantor, String train, String description, Timestamp time, long deleteAt, String deleteOperator, String deleteReason) {
+    public WhitelistRecord(long id, Instant time, String player, String operator, String guarantor, String train, String description, String deleteAt, String deleteReason, String deleteOperator) {
         this.id = id;
+        this.time = time;
         this.player = player;
         this.operator = operator;
         this.guarantor = guarantor;
         this.train = train;
         this.description = description;
-        this.time = time;
         this.deleteAt = deleteAt;
-        this.deleteOperator = deleteOperator;
         this.deleteReason = deleteReason;
+        this.deleteOperator = deleteOperator;
     }
 
-    // Getters for the fields
     public long getId() {
         return id;
+    }
+
+    public Instant getTime() {
+        return time;
     }
 
     public String getPlayer() {
@@ -52,19 +55,15 @@ public class WhitelistRecord {
         return description;
     }
 
-    public Timestamp getTime() {
-        return time;
-    }
-
-    public long getDeleteAt() {
+    public String getDeleteAt() {
         return deleteAt;
-    }
-
-    public String getDeleteOperator() {
-        return deleteOperator;
     }
 
     public String getDeleteReason() {
         return deleteReason;
+    }
+
+    public String getDeleteOperator() {
+        return deleteOperator;
     }
 }
