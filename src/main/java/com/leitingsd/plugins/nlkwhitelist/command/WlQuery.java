@@ -9,11 +9,9 @@ import net.kyori.adventure.text.Component;
 
 public class WlQuery implements SimpleCommand {
     private final NLKWhitelist plugin;
-    private final WhitelistManager whitelistManager;
 
-    public WlQuery(NLKWhitelist plugin, WhitelistManager whitelistManager) {
+    public WlQuery(NLKWhitelist plugin) {
         this.plugin = plugin;
-        this.whitelistManager = whitelistManager;
     }
 
     @Override
@@ -22,21 +20,17 @@ public class WlQuery implements SimpleCommand {
         String[] args = invocation.arguments();
 
         if (args.length < 1) {
-            source.sendMessage(Component.text(plugin.getMessage("wlquery-bad-arguments")));
+            source.sendMessage(Component.text("用法: /wlquery <玩家>"));
             return;
         }
 
         String player = args[0];
-        whitelistManager.queryWhitelist(player).thenAccept(record -> {
-            if (record != null) {
-                source.sendMessage(Component.text(plugin.getMessage("wlquery-entry", record.getId(), record.getTime(), record.getPlayer(), record.getGuarantor(), record.getOperator(), record.getTrain(), record.getDescription(), record.getDeleteAt(), record.getDeleteOperator(), record.getDeleteReason())));
-            } else {
-                source.sendMessage(Component.text(plugin.getMessage("wlquery-no-data")));
-            }
-        }).exceptionally(ex -> {
-            ex.printStackTrace();
-            source.sendMessage(Component.text(plugin.getMessage("internal-error", ex.getMessage())));
-            return null;
-        });
+        WhitelistRecord result = WhitelistManager.queryWhitelist(player);
+
+        if (result != null) {
+            source.sendMessage(Component.text("白名单条目: 玩家=" + player + ", 担保人=" + result.getGuarantor() + ", 审核批次号=" + result.getTrain() + ", 备注=" + result.getDescription()));
+        } else {
+            source.sendMessage(Component.text("未找到 " + player + " 的白名单"));
+        }
     }
 }
