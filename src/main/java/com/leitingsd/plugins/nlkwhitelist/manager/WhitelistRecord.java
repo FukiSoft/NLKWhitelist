@@ -3,16 +3,16 @@ package com.leitingsd.plugins.nlkwhitelist.manager;
 import java.sql.Timestamp;
 
 public class WhitelistRecord {
-    private final long id;
-    private final String player;
-    private final String operator;
-    private final String guarantor;
-    private final String train;
-    private final String description;
-    private final Timestamp time;
-    private final long deleteAt;
-    private final String deleteOperator;
-    private final String deleteReason;
+    private long id;
+    private String player;
+    private String operator;
+    private String guarantor;
+    private String train;
+    private String description;
+    private Timestamp time;
+    private long deleteAt;
+    private String deleteOperator;
+    private String deleteReason;
 
     public WhitelistRecord(long id, String player, String operator, String guarantor, String train, String description, Timestamp time, long deleteAt, String deleteOperator, String deleteReason) {
         this.id = id;
@@ -27,7 +27,8 @@ public class WhitelistRecord {
         this.deleteReason = deleteReason;
     }
 
-    // Getters for the fields
+    // Getter methods for all fields
+
     public long getId() {
         return id;
     }

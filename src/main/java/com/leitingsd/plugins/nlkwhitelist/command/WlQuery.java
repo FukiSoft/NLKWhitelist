@@ -7,6 +7,9 @@ import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import net.kyori.adventure.text.Component;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class WlQuery implements SimpleCommand {
     private final NLKWhitelist plugin;
     private final WhitelistManager whitelistManager;
@@ -29,7 +32,8 @@ public class WlQuery implements SimpleCommand {
         String player = args[0];
         whitelistManager.queryWhitelist(player).thenAccept(record -> {
             if (record != null) {
-                source.sendMessage(Component.text(plugin.getMessage("wlquery-entry", record.getId(), record.getTime(), record.getPlayer(), record.getGuarantor(), record.getOperator(), record.getTrain(), record.getDescription(), record.getDeleteAt(), record.getDeleteOperator(), record.getDeleteReason())));
+                String deleteAtMessage = (record.getDeleteAt() == 0) ? "未删除" : formatTimestamp(record.getDeleteAt());
+                source.sendMessage(Component.text(plugin.getMessage("wlquery-entry", record.getId(), record.getTime(), record.getPlayer(), record.getGuarantor(), record.getOperator(), record.getTrain(), record.getDescription(), deleteAtMessage, record.getDeleteOperator(), record.getDeleteReason())));
             } else {
                 source.sendMessage(Component.text(plugin.getMessage("wlquery-no-data")));
             }
@@ -38,5 +42,10 @@ public class WlQuery implements SimpleCommand {
             source.sendMessage(Component.text(plugin.getMessage("internal-error", ex.getMessage())));
             return null;
         });
+    }
+
+    private String formatTimestamp(long timestamp) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        return sdf.format(new Date(timestamp));
     }
 }

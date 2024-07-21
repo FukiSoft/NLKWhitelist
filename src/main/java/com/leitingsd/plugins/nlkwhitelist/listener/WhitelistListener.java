@@ -7,6 +7,10 @@ import com.velocitypowered.api.proxy.Player;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 public class WhitelistListener {
 
     private final WhitelistManager whitelistManager;
@@ -20,18 +24,19 @@ public class WhitelistListener {
     @Subscribe
     public void onPlayerLogin(LoginEvent event) {
         Player player = event.getPlayer();
-        whitelistManager.isPlayerWhitelisted(player.getUsername()).thenAccept(isWhitelisted -> {
+        try {
+            boolean isWhitelisted = whitelistManager.isPlayerWhitelisted(player.getUsername()).get(5, TimeUnit.SECONDS); // 设置5秒超时
+
             if (!isWhitelisted) {
                 logger.info("Player " + player.getUsername() + " was denied access (not whitelisted).");
-                player.disconnect(Component.text("你不在白名单中，无法加入服务器。"));
+                event.setResult(LoginEvent.ComponentResult.denied(Component.text("You are not whitelisted on this server.")));
             } else {
                 logger.info("Player " + player.getUsername() + " was allowed access (whitelisted).");
                 event.setResult(LoginEvent.ComponentResult.allowed());
             }
-        }).exceptionally(throwable -> {
-            logger.error("Error checking whitelist for player " + player.getUsername(), throwable);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            logger.error("Error checking whitelist for player " + player.getUsername(), e);
             player.disconnect(Component.text("发生了一个内部错误。"));
-            return null;
-        });
+        }
     }
 }

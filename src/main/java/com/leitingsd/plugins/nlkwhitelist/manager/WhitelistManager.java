@@ -37,14 +37,34 @@ public class WhitelistManager {
     public CompletableFuture<Void> addPlayerToWhitelist(String player, String operator, String guarantor, String train, String description) {
         return CompletableFuture.runAsync(() -> {
             try (Connection connection = databaseManager.getConnection()) {
-                String sql = "INSERT INTO whitelist (player, operator, guarantor, train, description) VALUES (?, ?, ?, ?, ?)";
-                try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                    statement.setString(1, player);
-                    statement.setString(2, operator);
-                    statement.setString(3, guarantor);
-                    statement.setString(4, train);
-                    statement.setString(5, description);
-                    statement.executeUpdate();
+                String checkSql = "SELECT COUNT(*) FROM whitelist WHERE player = ?";
+                try (PreparedStatement checkStatement = connection.prepareStatement(checkSql)) {
+                    checkStatement.setString(1, player);
+                    try (ResultSet resultSet = checkStatement.executeQuery()) {
+                        if (resultSet.next() && resultSet.getInt(1) > 0) {
+                            // 玩家存在，更新记录
+                            String updateSql = "UPDATE whitelist SET operator = ?, guarantor = ?, train = ?, description = ?, deleteAt = 0, deleteReason = NULL, deleteOperator = NULL WHERE player = ?";
+                            try (PreparedStatement updateStatement = connection.prepareStatement(updateSql)) {
+                                updateStatement.setString(1, operator);
+                                updateStatement.setString(2, guarantor);
+                                updateStatement.setString(3, train);
+                                updateStatement.setString(4, description);
+                                updateStatement.setString(5, player);
+                                updateStatement.executeUpdate();
+                            }
+                        } else {
+                            // 玩家不存在，插入新记录
+                            String insertSql = "INSERT INTO whitelist (player, operator, guarantor, train, description) VALUES (?, ?, ?, ?, ?)";
+                            try (PreparedStatement insertStatement = connection.prepareStatement(insertSql)) {
+                                insertStatement.setString(1, player);
+                                insertStatement.setString(2, operator);
+                                insertStatement.setString(3, guarantor);
+                                insertStatement.setString(4, train);
+                                insertStatement.setString(5, description);
+                                insertStatement.executeUpdate();
+                            }
+                        }
+                    }
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -55,7 +75,7 @@ public class WhitelistManager {
     public CompletableFuture<WhitelistRecord> queryWhitelist(String player) {
         return CompletableFuture.supplyAsync(() -> {
             try (Connection connection = databaseManager.getConnection()) {
-                String sql = "SELECT * FROM whitelist WHERE player = ? AND deleteAt = 0";
+                String sql = "SELECT * FROM whitelist WHERE player = ?";
                 try (PreparedStatement statement = connection.prepareStatement(sql)) {
                     statement.setString(1, player);
                     try (ResultSet resultSet = statement.executeQuery()) {

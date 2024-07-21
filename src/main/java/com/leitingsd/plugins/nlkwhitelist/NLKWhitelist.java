@@ -29,7 +29,7 @@ import java.util.Optional;
 @Plugin(
         id = "nlkwhitelist",
         name = "NLKWhitelist",
-        version = "2.0-SNAPSHOT",
+        version = "2.0.0",
         description = "A whitelist plugin for Velocity",
         authors = {"Leitingsd"}
 )
@@ -120,4 +120,6 @@ public class NLKWhitelist {
         String message = messages.getOrDefault(key, "未知消息键: " + key);
         return MessageFormat.format(message, args);
     }
+
+
 }
