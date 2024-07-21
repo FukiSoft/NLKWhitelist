@@ -1,38 +1,35 @@
 package com.leitingsd.plugins.nlkwhitelist.manager;
 
-import java.time.Instant;
+import java.sql.Timestamp;
 
 public class WhitelistRecord {
     private final long id;
-    private final Instant time;
     private final String player;
     private final String operator;
     private final String guarantor;
     private final String train;
     private final String description;
-    private final String deleteAt;
-    private final String deleteReason;
+    private final Timestamp time;
+    private final long deleteAt;
     private final String deleteOperator;
+    private final String deleteReason;
 
-    public WhitelistRecord(long id, Instant time, String player, String operator, String guarantor, String train, String description, String deleteAt, String deleteReason, String deleteOperator) {
+    public WhitelistRecord(long id, String player, String operator, String guarantor, String train, String description, Timestamp time, long deleteAt, String deleteOperator, String deleteReason) {
         this.id = id;
-        this.time = time;
         this.player = player;
         this.operator = operator;
         this.guarantor = guarantor;
         this.train = train;
         this.description = description;
+        this.time = time;
         this.deleteAt = deleteAt;
-        this.deleteReason = deleteReason;
         this.deleteOperator = deleteOperator;
+        this.deleteReason = deleteReason;
     }
 
+    // Getters for the fields
     public long getId() {
         return id;
-    }
-
-    public Instant getTime() {
-        return time;
     }
 
     public String getPlayer() {
@@ -55,15 +52,19 @@ public class WhitelistRecord {
         return description;
     }
 
-    public String getDeleteAt() {
-        return deleteAt;
+    public Timestamp getTime() {
+        return time;
     }
 
-    public String getDeleteReason() {
-        return deleteReason;
+    public long getDeleteAt() {
+        return deleteAt;
     }
 
     public String getDeleteOperator() {
         return deleteOperator;
+    }
+
+    public String getDeleteReason() {
+        return deleteReason;
     }
 }

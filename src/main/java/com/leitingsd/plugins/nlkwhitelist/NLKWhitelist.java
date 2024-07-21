@@ -8,6 +8,8 @@ import com.leitingsd.plugins.nlkwhitelist.database.DatabaseManager;
 import com.leitingsd.plugins.nlkwhitelist.listener.WhitelistListener;
 import com.leitingsd.plugins.nlkwhitelist.manager.WhitelistManager;
 import com.velocitypowered.api.event.EventManager;
+import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
@@ -27,7 +29,7 @@ import java.util.Optional;
 @Plugin(
         id = "nlkwhitelist",
         name = "NLKWhitelist",
-        version = "1.1-SNAPSHOT",
+        version = "2.0-SNAPSHOT",
         description = "A whitelist plugin for Velocity",
         authors = {"Leitingsd"}
 )
@@ -36,8 +38,8 @@ public class NLKWhitelist {
     private final ProxyServer server;
     private final Logger logger;
     private final Path dataDirectory;
-    private final DatabaseManager databaseManager;
-    private final WhitelistManager whitelistManager;
+    private DatabaseManager databaseManager;
+    private WhitelistManager whitelistManager;
     private Map<String, String> messages = new HashMap<>();
 
     @Inject
@@ -45,9 +47,13 @@ public class NLKWhitelist {
         this.server = server;
         this.logger = logger;
         this.dataDirectory = dataDirectory;
+    }
 
-        this.databaseManager = new DatabaseManager(this);
-        this.whitelistManager = new WhitelistManager(this.databaseManager);
+    @Subscribe
+    public void onProxyInitialization(ProxyInitializeEvent event) {
+        // Initialize database manager and whitelist manager
+        databaseManager = new DatabaseManager(this);
+        whitelistManager = new WhitelistManager(databaseManager);
 
         loadConfig();
         registerCommands();
@@ -85,7 +91,9 @@ public class NLKWhitelist {
     private void registerListeners() {
         EventManager eventManager = server.getEventManager();
         Optional<PluginContainer> container = server.getPluginManager().fromInstance(this);
-        container.ifPresent(pluginContainer -> eventManager.register(pluginContainer, new WhitelistListener(this, whitelistManager)));
+        container.ifPresent(pluginContainer -> {
+            eventManager.register(pluginContainer, new WhitelistListener(whitelistManager, logger));
+        });
     }
 
     public ProxyServer getServer() {

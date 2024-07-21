@@ -15,6 +15,25 @@ public class WhitelistManager {
         this.databaseManager = databaseManager;
     }
 
+    public CompletableFuture<Boolean> isPlayerWhitelisted(String player) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (Connection connection = databaseManager.getConnection()) {
+                String sql = "SELECT COUNT(*) FROM whitelist WHERE player = ? AND deleteAt = 0";
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.setString(1, player);
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        if (resultSet.next()) {
+                            return resultSet.getInt(1) > 0;
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return false;
+        });
+    }
+
     public CompletableFuture<Void> addPlayerToWhitelist(String player, String operator, String guarantor, String train, String description) {
         return CompletableFuture.runAsync(() -> {
             try (Connection connection = databaseManager.getConnection()) {
@@ -33,6 +52,36 @@ public class WhitelistManager {
         });
     }
 
+    public CompletableFuture<WhitelistRecord> queryWhitelist(String player) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (Connection connection = databaseManager.getConnection()) {
+                String sql = "SELECT * FROM whitelist WHERE player = ? AND deleteAt = 0";
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.setString(1, player);
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        if (resultSet.next()) {
+                            return new WhitelistRecord(
+                                    resultSet.getLong("id"),
+                                    resultSet.getString("player"),
+                                    resultSet.getString("operator"),
+                                    resultSet.getString("guarantor"),
+                                    resultSet.getString("train"),
+                                    resultSet.getString("description"),
+                                    resultSet.getTimestamp("time"),
+                                    resultSet.getLong("deleteAt"),
+                                    resultSet.getString("deleteOperator"),
+                                    resultSet.getString("deleteReason")
+                            );
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+    }
+
     public CompletableFuture<Void> removePlayerFromWhitelist(String player, String reason, String operator) {
         return CompletableFuture.runAsync(() -> {
             try (Connection connection = databaseManager.getConnection()) {
@@ -48,54 +97,5 @@ public class WhitelistManager {
                 e.printStackTrace();
             }
         });
-    }
-
-    public CompletableFuture<WhitelistRecord> queryWhitelist(String player) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (Connection connection = databaseManager.getConnection()) {
-                String sql = "SELECT * FROM whitelist WHERE player = ? ORDER BY time DESC";
-                try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                    statement.setString(1, player);
-                    try (ResultSet resultSet = statement.executeQuery()) {
-                        if (resultSet.next()) {
-                            long deleteAt = resultSet.getLong("deleteAt");
-                            String deleteAtFormatted = deleteAt == 0 ? "未删除" : String.valueOf(deleteAt);
-                            return new WhitelistRecord(
-                                    resultSet.getLong("id"),
-                                    resultSet.getTimestamp("time").toInstant(),
-                                    resultSet.getString("player"),
-                                    resultSet.getString("operator"),
-                                    resultSet.getString("guarantor"),
-                                    resultSet.getString("train"),
-                                    resultSet.getString("description"),
-                                    deleteAtFormatted,
-                                    resultSet.getString("deleteReason"),
-                                    resultSet.getString("deleteOperator")
-                            );
-                        }
-                    }
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            return null;
-        });
-    }
-
-    public boolean isPlayerWhitelisted(String player) {
-        try (Connection connection = databaseManager.getConnection()) {
-            String sql = "SELECT COUNT(*) FROM whitelist WHERE player = ? AND deleteAt = 0";
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, player);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getInt(1) > 0;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 }

@@ -29,10 +29,26 @@ public class DatabaseManager {
             throw new RuntimeException("MySQL JDBC 驱动程序加载失败", e);
         }
 
-        hikariConfig.setJdbcUrl("jdbc:mysql://" + config.get("host") + ":" + config.get("port") + "/" + config.get("database") + "?useSSL=" + config.get("usessl"));
-        hikariConfig.setUsername((String) config.get("user"));
-        hikariConfig.setPassword((String) config.get("password"));
-        config.forEach((key, value) -> hikariConfig.addDataSourceProperty(key, value));
+        String host = (String) config.getOrDefault("host", "localhost");
+        int port = Integer.parseInt(config.getOrDefault("port", 3306).toString());
+        String database = (String) config.getOrDefault("database", "whitelist");
+        String user = (String) config.getOrDefault("user", "root");
+        String password = (String) config.getOrDefault("password", "password");
+        boolean useSSL = Boolean.parseBoolean(config.getOrDefault("usessl", false).toString());
+
+        hikariConfig.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database + "?useSSL=" + useSSL);
+        hikariConfig.setUsername(user);
+        hikariConfig.setPassword(password);
+        hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+        hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+        hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+
+        // Optional HikariCP properties
+        if (config.containsKey("properties")) {
+            Map<String, Object> properties = (Map<String, Object>) config.get("properties");
+            properties.forEach((key, value) -> hikariConfig.addDataSourceProperty(key, value.toString()));
+        }
+
         this.dataSource = new HikariDataSource(hikariConfig);
         logger.info("数据库连接已初始化");
 
@@ -55,6 +71,7 @@ public class DatabaseManager {
             logger.error("无法创建表 'whitelist'", e);
         }
     }
+
 
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
