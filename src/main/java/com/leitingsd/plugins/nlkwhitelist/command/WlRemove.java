@@ -4,16 +4,13 @@ import com.leitingsd.plugins.nlkwhitelist.NLKWhitelist;
 import com.leitingsd.plugins.nlkwhitelist.manager.WhitelistManager;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
-import com.velocitypowered.api.proxy.Player;
 import net.kyori.adventure.text.Component;
 
 public class WlRemove implements SimpleCommand {
     private final NLKWhitelist plugin;
-    private final WhitelistManager whitelistManager;
 
-    public WlRemove(NLKWhitelist plugin, WhitelistManager whitelistManager) {
+    public WlRemove(NLKWhitelist plugin) {
         this.plugin = plugin;
-        this.whitelistManager = whitelistManager;
     }
 
     @Override
@@ -22,26 +19,18 @@ public class WlRemove implements SimpleCommand {
         String[] args = invocation.arguments();
 
         if (args.length < 2) {
-            source.sendMessage(Component.text(plugin.getMessage("wlremove-bad-arguments")));
+            source.sendMessage(Component.text("用法: /wlremove <玩家> <原因>"));
             return;
         }
 
         String player = args[0];
         String reason = args[1];
-        String operator;
+        boolean success = WhitelistManager.removeWhitelist(player, reason);
 
-        if (source instanceof Player) {
-            operator = ((Player) source).getUsername();
+        if (success) {
+            source.sendMessage(Component.text("已将 " + player + " 从白名单中移除，原因: " + reason));
         } else {
-            operator = "Console";
+            source.sendMessage(Component.text("未找到 " + player + " 的白名单"));
         }
-
-        whitelistManager.removePlayerFromWhitelist(player, reason, operator).thenRun(() ->
-                source.sendMessage(Component.text(plugin.getMessage("wlremove-success", player, operator)))
-        ).exceptionally(ex -> {
-            ex.printStackTrace();
-            source.sendMessage(Component.text(plugin.getMessage("internal-error", ex.getMessage())));
-            return null;
-        });
     }
 }
