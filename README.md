@@ -42,3 +42,6 @@
 /wlquery <玩家ID>
 ```
 
+## License
+该项目采用 MIT 许可证 - 有关详细信息，请参阅[LICENSE](LICENSE)。
+
