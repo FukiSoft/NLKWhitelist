@@ -9,11 +9,9 @@ import net.kyori.adventure.text.Component;
 
 public class WlAdd implements SimpleCommand {
     private final NLKWhitelist plugin;
-    private final WhitelistManager whitelistManager;
 
-    public WlAdd(NLKWhitelist plugin, WhitelistManager whitelistManager) {
+    public WlAdd(NLKWhitelist plugin) {
         this.plugin = plugin;
-        this.whitelistManager = whitelistManager;
     }
 
     @Override
@@ -21,29 +19,25 @@ public class WlAdd implements SimpleCommand {
         CommandSource source = invocation.source();
         String[] args = invocation.arguments();
 
-        if (args.length < 4) {
-            source.sendMessage(Component.text(plugin.getMessage("wladd-bad-arguments")));
+        if (args.length < 3) {
+            source.sendMessage(Component.text("用法: /wladd <玩家> <担保人> <审核批次号> [备注]"));
             return;
         }
 
         String player = args[0];
         String guarantor = args[1];
         String train = args[2];
-        String description = args[3];
-        String operator;
+        String note = args.length > 3 ? args[3] : "";
+
+        WhitelistManager.addWhitelist(player, guarantor, train, note);
+
+        source.sendMessage(Component.text("已将 " + player + " 添加到白名单"));
 
         if (source instanceof Player) {
-            operator = ((Player) source).getUsername();
+            Player playerSource = (Player) source;
+            playerSource.sendMessage(Component.text("你已将 " + player + " 添加到白名单"));
         } else {
-            operator = "Console";
+            source.sendMessage(Component.text("控制台已将 " + player + " 添加到白名单"));
         }
-
-        whitelistManager.addPlayerToWhitelist(player, operator, guarantor, train, description).thenRun(() ->
-                source.sendMessage(Component.text(plugin.getMessage("wladd-success", player, operator)))
-        ).exceptionally(ex -> {
-            ex.printStackTrace();
-            source.sendMessage(Component.text(plugin.getMessage("internal-error", ex.getMessage())));
-            return null;
-        });
     }
 }
