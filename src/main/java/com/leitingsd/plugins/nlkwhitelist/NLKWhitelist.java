@@ -1,115 +1,86 @@
 package com.leitingsd.plugins.nlkwhitelist;
 
-import com.google.inject.Inject;
 import com.leitingsd.plugins.nlkwhitelist.command.WlAdd;
 import com.leitingsd.plugins.nlkwhitelist.command.WlQuery;
 import com.leitingsd.plugins.nlkwhitelist.command.WlRemove;
 import com.leitingsd.plugins.nlkwhitelist.database.DatabaseManager;
 import com.leitingsd.plugins.nlkwhitelist.listener.WhitelistListener;
 import com.leitingsd.plugins.nlkwhitelist.manager.WhitelistManager;
-import com.velocitypowered.api.event.EventManager;
+import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
-import com.velocitypowered.api.plugin.PluginContainer;
-import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.command.CommandManager;
 import org.slf4j.Logger;
-import org.yaml.snakeyaml.Yaml;
+import org.slf4j.LoggerFactory;
+import org.simpleyaml.configuration.file.YamlConfiguration;
+import org.simpleyaml.configuration.file.FileConfiguration;
 
+import javax.inject.Inject;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.MessageFormat;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
-@Plugin(
-        id = "nlkwhitelist",
-        name = "NLKWhitelist",
-        version = "1.1-SNAPSHOT",
-        description = "A whitelist plugin for Velocity",
-        authors = {"Leitingsd"}
-)
+@Plugin(id = "nlkwhitelist", name = "NLKWhitelist", version = "1.0", description = "A whitelist plugin for Velocity")
 public class NLKWhitelist {
-
     private final ProxyServer server;
-    private final Logger logger;
-    private final Path dataDirectory;
-    private final DatabaseManager databaseManager;
-    private final WhitelistManager whitelistManager;
-    private Map<String, String> messages = new HashMap<>();
+    private final Logger logger = LoggerFactory.getLogger(NLKWhitelist.class);
+    private DatabaseManager databaseManager;
+    private FileConfiguration config;
 
     @Inject
-    public NLKWhitelist(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
+    public NLKWhitelist(ProxyServer server) {
         this.server = server;
-        this.logger = logger;
-        this.dataDirectory = dataDirectory;
-
-        this.databaseManager = new DatabaseManager(this);
-        this.whitelistManager = new WhitelistManager(this.databaseManager);
-
-        loadConfig();
-        registerCommands();
-        registerListeners();
     }
 
-    private void loadConfig() {
+    @Subscribe
+    public void onProxyInitialization(ProxyInitializeEvent event) {
         try {
-            if (!Files.exists(dataDirectory)) {
-                Files.createDirectories(dataDirectory);
-            }
-            Path configPath = dataDirectory.resolve("config.yml");
-            if (!Files.exists(configPath)) {
-                try (InputStream in = getClass().getResourceAsStream("/config.yml")) {
-                    Files.copy(in, configPath);
-                }
-            }
-            Yaml yaml = new Yaml();
-            try (InputStream input = Files.newInputStream(configPath)) {
-                Map<String, Object> config = yaml.load(input);
-                databaseManager.init((Map<String, Object>) config.get("database"));
-                messages = (Map<String, String>) config.get("messages");
-            }
+            loadConfig();
+            this.databaseManager = new DatabaseManager(config);
+            new WhitelistManager(databaseManager);
+            server.getEventManager().register(this, new WhitelistListener(this));
+            registerCommands();
         } catch (IOException e) {
-            logger.error("无法加载配置文件", e);
+            logger.error("Error loading configuration", e);
         }
     }
 
     private void registerCommands() {
-        server.getCommandManager().register(server.getCommandManager().metaBuilder("wladd").build(), new WlAdd(this, whitelistManager));
-        server.getCommandManager().register(server.getCommandManager().metaBuilder("wlquery").build(), new WlQuery(this, whitelistManager));
-        server.getCommandManager().register(server.getCommandManager().metaBuilder("wlremove").build(), new WlRemove(this, whitelistManager));
+        CommandManager commandManager = server.getCommandManager();
+        commandManager.register("wladd", new WlAdd(this));
+        commandManager.register("wlquery", new WlQuery(this));
+        commandManager.register("wlremove", new WlRemove(this));
     }
 
-    private void registerListeners() {
-        EventManager eventManager = server.getEventManager();
-        Optional<PluginContainer> container = server.getPluginManager().fromInstance(this);
-        container.ifPresent(pluginContainer -> eventManager.register(pluginContainer, new WhitelistListener(this, whitelistManager)));
-    }
+    private void loadConfig() throws IOException {
+        File configFile = new File("plugins/NLKWhitelist/config.yml");
+        if (!configFile.exists()) {
+            configFile.getParentFile().mkdirs();
+            configFile.createNewFile();
+            logger.info("Created default configuration file at plugins/NLKWhitelist/config.yml");
+        }
+        config = YamlConfiguration.loadConfiguration(configFile);
 
-    public ProxyServer getServer() {
-        return server;
-    }
-
-    public Logger getLogger() {
-        return logger;
-    }
-
-    public Path getDataDirectory() {
-        return dataDirectory;
+        // 检查配置文件中的字段是否正确填充
+        if (config.getString("database.address") == null || config.getString("database.address").isEmpty()) {
+            config.set("database.address", "localhost");
+        }
+        if (config.getString("database.port") == null || config.getString("database.port").isEmpty()) {
+            config.set("database.port", 3306);
+        }
+        if (config.getString("database.name") == null || config.getString("database.name").isEmpty()) {
+            config.set("database.name", "whitelist");
+        }
+        if (config.getString("database.user") == null || config.getString("database.user").isEmpty()) {
+            config.set("database.user", "username");
+        }
+        if (config.getString("database.password") == null || config.getString("database.password").isEmpty()) {
+            config.set("database.password", "password");
+        }
+        config.save(configFile);
     }
 
     public DatabaseManager getDatabaseManager() {
         return databaseManager;
-    }
-
-    public WhitelistManager getWhitelistManager() {
-        return whitelistManager;
-    }
-
-    public String getMessage(String key, Object... args) {
-        String message = messages.getOrDefault(key, "未知消息键: " + key);
-        return MessageFormat.format(message, args);
     }
 }
