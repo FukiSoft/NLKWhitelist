@@ -2,7 +2,10 @@
 
 基于 RIAWhitelist 所实现的功能，以 Velocity 插件格式完全重写。
 
-可追踪添加和移除的 Velocity 白名单插件。
+请注意：本插件已经停止更新，V2.0.0为本插件的最后一个版本。
+如果您希望使用如果您希望使用带有 正版验证/第三方API自验证 的Velocity白名单插件，请使用[https://github.com/FukiSoft/NLKWhitelistX](NLKWhitelistX)，接下来将只有该插件会获得支持。
+
+可追踪添加和移除的 Velocity 离线模式白名单插件。
 
 ## 特性
 
